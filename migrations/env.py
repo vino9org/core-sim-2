@@ -7,7 +7,7 @@ from sqlalchemy import engine_from_config, pool
 
 load_dotenv()
 
-from core_sim.models import Base  # noqa: E402
+from casa.models import Base  # noqa: E402
 
 config = context.config
 
@@ -20,9 +20,9 @@ config.set_main_option("sqlalchemy.url", url)
 target_metadata = Base.metadata
 
 
-def include_object(db_object, name, type_, reflected, compare_to):
-    # include every table by default
-    return True
+def include_object(object_, name, type_, reflected, compare_to):
+    # Replace 'table_to_ignore' with the actual name of the table you want to ignore
+    return type_ == "table" and name.stsartswith("casa_")
 
 
 def run_migrations_offline() -> None:

@@ -1,0 +1,23 @@
+exclude: "^$|deploy|scripts|tmp"
+fail_fast: false
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: check-toml
+      # - id: debug-statements
+      #   args: ["--print-changes"]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.8
+    hooks:
+      - id: ruff
+        name: Ruff check
+        description: "Run 'ruff check' for extremely fast Python linting"
+        args: [ --fix ]
+
+      - id: ruff-format
+        name: Ruff format
+        description: "Run 'ruff format' for extremely fast Python formatting"

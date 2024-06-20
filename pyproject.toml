@@ -13,6 +13,8 @@ dependencies = [
     "psycopg[binary, pool] >= 3.1.19",
     "fastapi>=0.111.0",
     "newrelic>=9.11.0",
+    "uvicorn>=0.30.1",
+    "ulid-py>=1.1.0",
 ]
 
 [tool.rye]
@@ -37,6 +39,7 @@ testpaths = ["tests"]
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]
+env_files = [".env"]
 
 [tool.coverage.run]
 source = ["."]

@@ -7,3 +7,4 @@
 !requirements*.txt
 !requirements*.lock
 !*.py
+!casa/*

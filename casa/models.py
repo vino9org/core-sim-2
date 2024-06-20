@@ -52,7 +52,6 @@ class Transaction(Base):
     currency: Mapped[str] = mapped_column(String(3))
     amount: Mapped[float] = mapped_column(DECIMAL(14, 2))
     memo: Mapped[str] = mapped_column(String(100))
-    account_id: Mapped[int] = mapped_column(ForeignKey("account.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     account_id: Mapped[int] = mapped_column(Integer, ForeignKey("casa_account.id"))

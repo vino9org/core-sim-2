@@ -28,4 +28,4 @@ COPY --chown=app:app --from=builder /app/venv /app/venv
 COPY --chown=app:app . .
 
 ENV PATH="/app/venv/bin:$PATH"
-CMD  ["/bin/sh", "/app/entrypoint.sh"]
+CMD  ["/bin/bash", "/app/entrypoint.sh"]

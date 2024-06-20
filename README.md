@@ -25,7 +25,7 @@ rye sync
 
 ```shell
 
-# update your DATABASE_URL is used
+# update your DATABASE_URI is used
 # create database and assign proper privileges to the user
 # e.g.
 # create database mydb;

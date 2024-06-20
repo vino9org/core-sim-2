@@ -29,5 +29,3 @@ COPY --chown=app:app . .
 
 ENV PATH="/app/venv/bin:$PATH"
 CMD  ["/bin/sh", "/app/entrypoint.sh"]
-
-

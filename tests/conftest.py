@@ -1,17 +1,15 @@
+import logging
 import os
 import sys
-
 
 import pytest
 from alembic import command
 from alembic.config import Config
-import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import create_database, database_exists, drop_database
 
 logger = logging.getLogger(__name__)
-
 
 
 cwd = os.path.dirname(os.path.abspath(__file__))
@@ -72,4 +70,3 @@ def seed_data(session):
     root = User(login_name="root")
     session.add(root)
     session.commit()
-

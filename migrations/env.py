@@ -19,9 +19,11 @@ config.set_main_option("sqlalchemy.url", url)
 
 target_metadata = Base.metadata
 
+
 def include_object(db_object, name, type_, reflected, compare_to):
     # include every table by default
     return True
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.

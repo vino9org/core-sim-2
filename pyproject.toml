@@ -11,6 +11,8 @@ dependencies = [
     "sqlalchemy-utils >= 0.41.1",
     "alembic >= 1.13.0",
     "psycopg[binary, pool] >= 3.1.19",
+    "fastapi>=0.111.0",
+    "newrelic>=9.11.0",
 ]
 
 [tool.rye]

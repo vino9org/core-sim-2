@@ -16,7 +16,7 @@ def test_get_account_not_found():
     assert response.status_code == 404
 
 
-def test_transfer():
+def test_transfer_success():
     payload = {
         "trx_date": "2021-01-02",
         "debit_account_num": "0987654321",

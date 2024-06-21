@@ -105,7 +105,12 @@ def transfer(session: Session, transfer: schemas.TransferSchema) -> schemas.Tran
         session.add(transfer_obj)
         session.commit()
 
-        return model2schema(transfer_obj, schemas.TransferSchema)
+        transfer.created_at = now_dt
+        return transfer
+
+        # this actually triggers a query in the database, why?!
+        # return model2schema(transfer_obj, schemas.TransferSchema)
+
     except (IntegrityError, ValidationError):
         session.rollback()
         raise

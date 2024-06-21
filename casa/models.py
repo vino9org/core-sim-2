@@ -12,13 +12,15 @@ from sqlalchemy import (
     String,
 )
 from sqlalchemy.orm import (
+    DeclarativeBase,
     Mapped,
-    declarative_base,
     mapped_column,
     relationship,
 )
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 
 class StatusEnum(enum.Enum):

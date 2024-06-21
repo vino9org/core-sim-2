@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 from datetime import datetime, timezone
@@ -12,9 +13,13 @@ from sqlalchemy_utils import create_database, database_exists, drop_database
 cwd = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath(f"{cwd}/.."))
 
+# the following import only works after sys.path is updated
 from casa import models  # noqa
 from casa.api import db_session  # noqa
 from main import app  # noqa
+
+
+logger = logging.getLogger(__name__)
 
 
 def tmp_sqlite_url():
@@ -37,6 +42,7 @@ def testing_db_session():
         session.close()
 
 
+# overrides default dependency injection for testing
 app.dependency_overrides[db_session] = testing_db_session
 
 
@@ -48,10 +54,10 @@ def test_db():
     2. run migration on the database
     3. delete the database after the test, unless KEEP_TEST_DB is set to Y
     """
-
     test_db_created = False
+
     if not database_exists(test_db_url):
-        print(f"==creating test database {test_db_url}")
+        logger.info(f"==creating test database {test_db_url}")
         create_database(test_db_url)
         test_db_created = True
 
@@ -63,19 +69,22 @@ def test_db():
 
         # seed test data
         with TestingSessionLocal() as session:
-            print("==adding seed data")
+            logger.info("==adding seed data")
             seed_data(session)
 
-    yield testing_sql_engine  # the value is not used
+    # the yielded value is not used, but we need this structure to ensure the cleanup code runs
+    yield testing_sql_engine
 
-    if test_db_created and os.environ.get("KEEP_TEST_DB", "N").upper() not in ["1", "Y", "YES", "TRUE"]:
-        # drop the test database
-        print(f"==dropping test database {test_db_url}")
+    # only delete the test database if it was created during this test run
+    # to avoid accidental deletion of potentially important data
+    keep_test_db = os.environ.get("KEEP_TEST_DB", "N").upper() in ["1", "Y", "YES", "TRUE"]
+    if test_db_created and not keep_test_db:
+        logger.info(f"==dropping test database {test_db_url}")
         drop_database(test_db_url)
 
 
 @pytest.fixture(scope="session")
-def db_session():
+def session():
     with sessionmaker(autocommit=False, autoflush=False, bind=testing_sql_engine)() as session:
         yield session
 

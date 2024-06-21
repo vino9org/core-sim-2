@@ -1,6 +1,5 @@
 from datetime import datetime
-from decimal import Decimal
-from typing import Any, Type
+from typing import Any, Type, TypeVar
 
 import ulid
 from pydantic import BaseModel
@@ -10,12 +9,14 @@ from sqlalchemy.orm import Session
 
 from . import models, schemas
 
+T = TypeVar("T", bound=BaseModel)
+
 
 class ValidationError(Exception):
     pass
 
 
-def model2schema(model_obj: Any, schema_cls: Type[BaseModel]) -> BaseModel:
+def model2schema(model_obj: Any, schema_cls: Type[T]) -> T:
     return schema_cls.model_validate(model_obj)
 
 
@@ -41,8 +42,6 @@ def _get_account_(session: Session, account_num: str) -> models.Account | None:
 
 
 def transfer(session: Session, transfer: schemas.TransferSchema) -> schemas.TransferSchema:
-    transfer_amount = Decimal(transfer.amount)
-
     try:
         now_dt = datetime.now()
 
@@ -59,8 +58,8 @@ def transfer(session: Session, transfer: schemas.TransferSchema) -> schemas.Tran
         if credit_account is None:
             raise ValidationError("Invalid credit account")
 
-        debit_account.avail_balance -= transfer_amount
-        debit_account.balance -= transfer_amount
+        debit_account.avail_balance -= transfer.amount
+        debit_account.balance -= transfer.amount
         session.add(debit_account)
 
         session.add(
@@ -75,8 +74,8 @@ def transfer(session: Session, transfer: schemas.TransferSchema) -> schemas.Tran
             )
         )
 
-        credit_account.avail_balance += transfer_amount
-        credit_account.balance += transfer_amount
+        credit_account.avail_balance += transfer.amount
+        credit_account.balance += transfer.amount
         session.add(credit_account)
 
         session.add(

@@ -20,12 +20,11 @@ fi
 #     alembic upgrade head
 # fi
 
-export NO_DEBUG=1
-
 WRAPPER=
 
 if [ -f "newrelic.ini" ]; then
-     WRAPPER="newrelic-admin run-program "
+    export NEW_RELIC_CONFIG_FILE=$(pwd)/newrelic.ini
+    WRAPPER="newrelic-admin run-program "
 fi
 
 $WRAPPER uvicorn main:app --host 0.0.0.0 --port 8000 --workers ${WORKERS:-1}

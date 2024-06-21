@@ -85,7 +85,7 @@ def test_db():
 
 @pytest.fixture(scope="session")
 def session():
-    with sessionmaker(autocommit=False, autoflush=False, bind=testing_sql_engine)() as session:
+    with TestingSessionLocal() as session:
         yield session
 
 

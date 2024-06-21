@@ -22,15 +22,7 @@ def model2schema(model_obj: Any, schema_cls: Type[T]) -> T:
 
 
 def get_account_details(session: Session, account_num: str) -> schemas.AccountSchema | None:
-    account = _get_account_(session, account_num)
-    if account:
-        return model2schema(account, schemas.AccountSchema)
-
-    return None
-
-
-def _get_account_(session: Session, account_num: str) -> models.Account | None:
-    return (
+    account = (
         session.query(models.Account)
         .filter(
             and_(
@@ -41,6 +33,36 @@ def _get_account_(session: Session, account_num: str) -> models.Account | None:
         .first()
     )
 
+    if account:
+        return model2schema(account, schemas.AccountSchema)
+
+    return None
+
+
+def _lock_accounts_for_trasnfer_(
+    session: Session,
+    debit_account_num: str,
+    credit_account_num: str,
+) -> tuple[models.Account, models.Account]:
+    accounts = (
+        session.query(models.Account)
+        .filter(
+            models.Account.account_num.in_([debit_account_num, credit_account_num]),
+            models.Account.status == models.StatusEnum.ACTIVE,
+        )
+        .with_for_update()
+        .all()
+    )
+
+    if len(accounts) != 2:
+        session.rollback()
+        raise ValidationError("Invalid debit or credit account number")
+
+    if accounts[0].account_num == debit_account_num:
+        return accounts[0], accounts[1]
+    else:
+        return accounts[1], accounts[0]
+
 
 def transfer(session: Session, transfer: schemas.TransferSchema) -> schemas.TransferSchema:
     try:
@@ -50,15 +72,13 @@ def transfer(session: Session, transfer: schemas.TransferSchema) -> schemas.Tran
         if transfer.ref_id is None or transfer.ref_id == "":
             transfer.ref_id = str(ulid.new())
 
-        debit_account = _get_account_(session, transfer.debit_account_num)
-        if debit_account is None:
-            raise ValidationError("Invalid debit account")
+        debit_account, credit_account = _lock_accounts_for_trasnfer_(
+            session,
+            transfer.debit_account_num,
+            transfer.credit_account_num,
+        )
         if debit_account.avail_balance < transfer.amount:
             raise ValidationError("Insufficient funds in debit account")
-
-        credit_account = _get_account_(session, transfer.credit_account_num)
-        if credit_account is None:
-            raise ValidationError("Invalid credit account")
 
         debit_account.avail_balance -= Decimal(transfer.amount)
         debit_account.balance -= transfer_amount

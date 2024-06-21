@@ -28,8 +28,10 @@ def tmp_sqlite_url():
     return f"sqlite:///{tmp_path}/test.db"
 
 
-test_db_url = os.environ.get("TEST_DATABASE_URI", tmp_sqlite_url())
-testing_sql_engine = create_engine(test_db_url, connect_args={"check_same_thread": False}, echo=False)
+test_db_url, conn_args = os.environ.get("TEST_DATABASE_URI", tmp_sqlite_url()), {}
+if test_db_url.startswith("sqlite"):
+    conn_args = {"check_same_thread": False}
+testing_sql_engine = create_engine(test_db_url, connect_args=conn_args, echo=False)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=testing_sql_engine)
 
 
@@ -57,6 +59,7 @@ def test_db():
     test_db_created = False
 
     if not database_exists(test_db_url):
+        print(f"==creating test database {test_db_url}")
         logger.info(f"==creating test database {test_db_url}")
         create_database(test_db_url)
         test_db_created = True

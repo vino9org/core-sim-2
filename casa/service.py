@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Type, TypeVar
 
 import ulid
@@ -44,6 +45,7 @@ def _get_account_(session: Session, account_num: str) -> models.Account | None:
 def transfer(session: Session, transfer: schemas.TransferSchema) -> schemas.TransferSchema:
     try:
         now_dt = datetime.now()
+        transfer_amount = Decimal(transfer.amount)
 
         if transfer.ref_id is None or transfer.ref_id == "":
             transfer.ref_id = str(ulid.new())
@@ -58,8 +60,8 @@ def transfer(session: Session, transfer: schemas.TransferSchema) -> schemas.Tran
         if credit_account is None:
             raise ValidationError("Invalid credit account")
 
-        debit_account.avail_balance -= transfer.amount
-        debit_account.balance -= transfer.amount
+        debit_account.avail_balance -= Decimal(transfer.amount)
+        debit_account.balance -= transfer_amount
         session.add(debit_account)
 
         session.add(
@@ -74,8 +76,8 @@ def transfer(session: Session, transfer: schemas.TransferSchema) -> schemas.Tran
             )
         )
 
-        credit_account.avail_balance += transfer.amount
-        credit_account.balance += transfer.amount
+        credit_account.avail_balance += transfer_amount
+        credit_account.balance += transfer_amount
         session.add(credit_account)
 
         session.add(

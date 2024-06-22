@@ -7,14 +7,14 @@ readme = "README.md"
 requires-python = ">= 3.12"
 dependencies = [
     "python-dotenv >= 1.0.0",
-    "sqlalchemy[mypy] >= 2.0.23",
     "sqlalchemy-utils >= 0.41.1",
     "alembic >= 1.13.0",
-    "psycopg[binary, pool] >= 3.1.19",
     "fastapi>=0.111.0",
     "newrelic>=9.11.0",
     "uvicorn>=0.30.1",
     "ulid-py>=1.1.0",
+    "sqlalchemy[postgresql_asyncpg,mypy]>=2.0.31",
+    "psycopg[binary]>=3.1.19",
 ]
 
 [tool.rye]
@@ -28,6 +28,7 @@ dev-dependencies = [
     "pre-commit >= 3.7.1",
     "ruff >= 0.4.8",
     "mypy >= 1.10.0",
+    "pytest-asyncio>=0.23.7",
 ]
 
 [tool.rye.scripts]
@@ -36,6 +37,7 @@ pre = "pre-commit run --all-files"
 [tool.pytest.ini_options]
 minversion = "6.0"
 testpaths = ["tests"]
+asyncio_mode = "auto"
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]

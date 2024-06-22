@@ -1,4 +1,3 @@
-import enum
 from datetime import datetime
 from decimal import Decimal
 from typing import List
@@ -6,7 +5,6 @@ from typing import List
 from sqlalchemy import (
     DECIMAL,
     DateTime,
-    Enum,
     ForeignKey,
     Index,
     Integer,
@@ -24,10 +22,10 @@ class Base(DeclarativeBase):
     pass
 
 
-class StatusEnum(enum.Enum):
-    ACTIVE = "active"
-    SUSPENDED = "suspended"
-    CLOSED = "closed"
+# class StatusEnum(enum.Enum):
+#     ACTIVE = "active"
+#     SUSPENDED = "suspended"
+#     CLOSED = "closed"
 
 
 class Account(Base):
@@ -38,7 +36,7 @@ class Account(Base):
     currency: Mapped[str] = mapped_column(String(3))
     balance: Mapped[Decimal] = mapped_column(DECIMAL(14, 2))
     avail_balance: Mapped[Decimal] = mapped_column(DECIMAL(14, 2))
-    status: Mapped[StatusEnum] = mapped_column(Enum(StatusEnum), default=StatusEnum.ACTIVE)
+    status: Mapped[str] = mapped_column(String(10), default="ACTIVE")
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     transactions: Mapped[List["Transaction"]] = relationship("Transaction", back_populates="account")

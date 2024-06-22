@@ -1,6 +1,17 @@
-from casa.models import Account, StatusEnum
+import pytest
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from casa.models import Account
 
 
-def test_query_models(session):
-    account = session.query(Account).filter_by(account_num="1234567890", status=StatusEnum.ACTIVE).first()
+@pytest.mark.asyncio
+async def test_query_models(session: AsyncSession):
+    result = await session.execute(
+        select(Account).where(
+            Account.account_num == "1234567890",
+            Account.status == "ACTIVE",
+        )
+    )
+    account = result.first()
     assert account.currency == "USD"

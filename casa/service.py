@@ -82,34 +82,28 @@ def transfer(session: Session, transfer: schemas.TransferSchema) -> schemas.Tran
 
         debit_account.avail_balance -= Decimal(transfer.amount)
         debit_account.balance -= transfer_amount
-        session.add(debit_account)
 
-        session.add(
-            models.Transaction(
-                ref_id=transfer.ref_id,
-                trx_date=transfer.trx_date,
-                currency=transfer.currency,
-                amount=-transfer.amount,
-                memo=transfer.memo,
-                account=debit_account,
-                created_at=now_dt,
-            )
+        debit_transction = models.Transaction(
+            ref_id=transfer.ref_id,
+            trx_date=transfer.trx_date,
+            currency=transfer.currency,
+            amount=-transfer.amount,
+            memo=transfer.memo,
+            account=debit_account,
+            created_at=now_dt,
         )
 
         credit_account.avail_balance += transfer_amount
         credit_account.balance += transfer_amount
-        session.add(credit_account)
 
-        session.add(
-            models.Transaction(
-                ref_id=transfer.ref_id,
-                trx_date=transfer.trx_date,
-                currency=transfer.currency,
-                amount=transfer.amount,
-                memo=f"from {transfer.debit_account_num}: {transfer.memo}",
-                account=credit_account,
-                created_at=now_dt,
-            )
+        credit_transction = models.Transaction(
+            ref_id=transfer.ref_id,
+            trx_date=transfer.trx_date,
+            currency=transfer.currency,
+            amount=transfer.amount,
+            memo=f"from {transfer.debit_account_num}: {transfer.memo}",
+            account=credit_account,
+            created_at=now_dt,
         )
 
         transfer_obj = models.Transfer(
@@ -122,7 +116,8 @@ def transfer(session: Session, transfer: schemas.TransferSchema) -> schemas.Tran
             credit_account_num=transfer.credit_account_num,
             created_at=now_dt,
         )
-        session.add(transfer_obj)
+
+        session.add_all([debit_account, credit_account, debit_transction, credit_transction, transfer_obj])
         session.commit()
 
         transfer.created_at = now_dt

@@ -27,4 +27,4 @@ if [ -f "newrelic.ini" ]; then
     WRAPPER="newrelic-admin run-program "
 fi
 
-$WRAPPER uvicorn main:app --host 0.0.0.0 --port 8000 --workers ${WORKERS:-1} --threads ${THREADS:-1}
+$WRAPPER uvicorn main:app --host 0.0.0.0 --port 8000 --workers ${WORKERS:-1}

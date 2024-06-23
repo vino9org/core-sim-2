@@ -66,7 +66,7 @@ def prep_new_test_db(test_db_url: str) -> tuple[bool, str]:
 
     # Run the migrations
     # so we set it so that alembic knows to use the correct database during testing
-    os.environ["SQLALCHEMY_DATABASE_URI"] = db_url
+    os.environ["ALEMBIC_DATABASE_URI"] = db_url
     alembic_cfg = Config("alembic.ini")
     command.upgrade(alembic_cfg, "head")
 

@@ -14,7 +14,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-url = os.getenv("SQLALCHEMY_DATABASE_URI", "")
+url = os.getenv("ALEMBIC_DATABASE_URI", "")
 config.set_main_option("sqlalchemy.url", url)
 
 target_metadata = Base.metadata
@@ -22,7 +22,7 @@ target_metadata = Base.metadata
 
 def include_object(object_, name, type_, reflected, compare_to):
     # Replace 'table_to_ignore' with the actual name of the table you want to ignore
-    return type_ == "table" and name.stsartswith("casa_")
+    return type_ == "table" and name.startswith("casa_")
 
 
 def run_migrations_offline() -> None:

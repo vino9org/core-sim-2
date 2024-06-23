@@ -22,6 +22,18 @@
                 "-k",
                 "test_default_project",
             ]
-        }
+        },
+        {
+            "name": "Run program",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--source",
+                "a.csv"
+            ]
+        },
     ]
 }

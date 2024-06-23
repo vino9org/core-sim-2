@@ -27,3 +27,4 @@ cdk.out
 
 # test data
 *.db
+*.csv

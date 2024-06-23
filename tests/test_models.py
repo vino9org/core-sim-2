@@ -1,17 +1,26 @@
-import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from casa.models import Account
+from casa.models import Account, StatusEnum
 
 
-@pytest.mark.asyncio
 async def test_query_models(session: AsyncSession):
-    result = await session.execute(
-        select(Account).where(
-            Account.account_num == "1234567890",
-            Account.status == "ACTIVE",
+    account = (
+        (
+            await session.execute(
+                select(Account)
+                .where(
+                    Account.account_num == "1234567890",
+                    Account.status == StatusEnum.ACTIVE,
+                )
+                .options(selectinload(Account.transactions))
+            )
         )
+        .scalars()
+        .first()
     )
-    account = result.first()
+
+    assert account
     assert account.currency == "USD"
+    assert len(account.transactions) >= 1

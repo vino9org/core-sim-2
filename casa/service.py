@@ -24,7 +24,7 @@ def model2schema(model_obj: Any, schema_cls: Type[T]) -> T:
 async def get_account_details(session: AsyncSession, account_num: str) -> schemas.AccountSchema | None:
     stmt = select(models.Account).filter(
         models.Account.account_num == account_num,
-        models.Account.status == "ACTIVE",
+        models.Account.status == models.StatusEnum.ACTIVE,
     )
     result = await session.execute(stmt)
     account = result.scalars().first()
@@ -44,7 +44,7 @@ async def _lock_accounts_for_trasnfer_(
         select(models.Account)
         .filter(
             models.Account.account_num.in_([debit_account_num, credit_account_num]),
-            models.Account.status == "ACTIVE",
+            models.Account.status == models.StatusEnum.ACTIVE,
         )
         .with_for_update()
     )

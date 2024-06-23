@@ -1,22 +1,15 @@
-from fastapi.testclient import TestClient
-
-from main import app
-
-client = TestClient(app)
-
-
-def test_get_account_details():
-    response = client.get("/api/casa/accounts/1234567890")
+async def test_get_account_details(client):
+    response = await client.get("/api/casa/accounts/1234567890")
     assert response.status_code == 200
     assert response.json()["currency"] == "USD"
 
 
-def test_get_account_not_found():
-    response = client.get("/api/casa/accounts/bad_account")
+async def test_get_account_not_found(client):
+    response = await client.get("/api/casa/accounts/bad_account")
     assert response.status_code == 404
 
 
-def test_transfer_success():
+async def test_transfer_success(client):
     payload = {
         "trx_date": "2021-01-02",
         "debit_account_num": "0987654321",
@@ -26,12 +19,12 @@ def test_transfer_success():
         "memo": "test transfer",
     }
 
-    response = client.post("/api/casa/transfers", json=payload)
+    response = await client.post("/api/casa/transfers", json=payload)
     assert response.status_code == 201
     assert response.json()["ref_id"] != ""
 
 
-def test_transfer_with_bad_account():
+async def test_transfer_with_bad_account(client):
     # payload with all required fields but invalid account number
     payload = {
         "trx_date": "2021-01-02",
@@ -42,11 +35,11 @@ def test_transfer_with_bad_account():
         "memo": "test transfer",
     }
 
-    response = client.post("/api/casa/transfers", json=payload)
+    response = await client.post("/api/casa/transfers", json=payload)
     assert response.status_code == 422
 
 
-def test_transfer_invalid_request():
+async def test_transfer_invalid_request(client):
     # payload incomplete, trx_date is required field but not supplied
     payload = {
         "debit_account_num": "0987654321",
@@ -56,5 +49,5 @@ def test_transfer_invalid_request():
         "memo": "test transfer",
     }
 
-    response = client.post("/api/casa/transfers", json=payload)
+    response = await client.post("/api/casa/transfers", json=payload)
     assert response.status_code == 422

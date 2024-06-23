@@ -8,7 +8,7 @@ __all__ = ["SessionLocal", "engine"]
 
 load_dotenv()
 
-db_url = os.environ.get("SQLALCHEMY_DATABASE_URI", "")
+db_url = os.environ.get("SQLALCHEMY_DATABASE_URI", "sqlite:///memory:")
 conn_args = {"check_same_thread": False} if db_url.startswith("sqlite") else {}
 
 engine = create_engine(db_url, connect_args=conn_args, echo=False)

@@ -50,7 +50,7 @@ def async2sync_database_uri(database_uri: str) -> str:
         return database_uri
 
 
-def prep_new_test_db(db_url: str) -> tuple[bool, str]:
+def prep_new_test_db(test_db_url: str) -> tuple[bool, str]:
     """
     create a new test database
     run alembic schema migration

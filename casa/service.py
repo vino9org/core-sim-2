@@ -6,7 +6,7 @@ import ulid
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import models, schemas
 
@@ -21,12 +21,12 @@ def model2schema(model_obj: Any, schema_cls: Type[T]) -> T:
     return schema_cls.model_validate(model_obj)
 
 
-def get_account_details(session: Session, account_num: str) -> schemas.AccountSchema | None:
+async def get_account_details(session: AsyncSession, account_num: str) -> schemas.AccountSchema | None:
     stmt = select(models.Account).filter(
         models.Account.account_num == account_num,
         models.Account.status == models.StatusEnum.ACTIVE,
     )
-    result = session.execute(stmt)
+    result = await session.execute(stmt)
     account = result.scalars().first()
 
     if account:
@@ -35,8 +35,8 @@ def get_account_details(session: Session, account_num: str) -> schemas.AccountSc
     return None
 
 
-def _lock_accounts_for_trasnfer_(
-    session: Session,
+async def _lock_accounts_for_trasnfer_(
+    session: AsyncSession,
     debit_account_num: str,
     credit_account_num: str,
 ) -> tuple[models.Account, models.Account]:
@@ -48,11 +48,11 @@ def _lock_accounts_for_trasnfer_(
         )
         .with_for_update()
     )
-    result = session.execute(stmt)
+    result = await session.execute(stmt)
     accounts = result.scalars().all()
 
     if len(accounts) != 2:
-        session.rollback()
+        await session.rollback()
         raise ValidationError("Invalid debit or credit account number")
 
     if accounts[0].account_num == debit_account_num:
@@ -61,7 +61,7 @@ def _lock_accounts_for_trasnfer_(
         return accounts[1], accounts[0]
 
 
-def transfer(session: Session, transfer: schemas.TransferSchema) -> schemas.TransferSchema:
+async def transfer(session: AsyncSession, transfer: schemas.TransferSchema) -> schemas.TransferSchema:
     try:
         now_dt = datetime.now()
         transfer_amount = Decimal(transfer.amount)
@@ -69,7 +69,7 @@ def transfer(session: Session, transfer: schemas.TransferSchema) -> schemas.Tran
         if transfer.ref_id is None or transfer.ref_id == "":
             transfer.ref_id = str(ulid.new())
 
-        debit_account, credit_account = _lock_accounts_for_trasnfer_(
+        debit_account, credit_account = await _lock_accounts_for_trasnfer_(
             session,
             transfer.debit_account_num,
             transfer.credit_account_num,
@@ -115,7 +115,7 @@ def transfer(session: Session, transfer: schemas.TransferSchema) -> schemas.Tran
         )
 
         session.add_all([debit_account, credit_account, debit_transction, credit_transction, transfer_obj])
-        session.commit()
+        await session.commit()
 
         transfer.created_at = now_dt
         return transfer
@@ -124,5 +124,5 @@ def transfer(session: Session, transfer: schemas.TransferSchema) -> schemas.Tran
         # return model2schema(transfer_obj, schemas.TransferSchema)
 
     except (IntegrityError, ValidationError):
-        session.rollback()
+        await session.rollback()
         raise

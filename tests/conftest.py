@@ -1,12 +1,16 @@
+import asyncio
 import logging
 import os
 import sys
 from datetime import datetime, timezone
+from typing import AsyncIterator
 
 import pytest
 from alembic import command
 from alembic.config import Config
+from httpx import AsyncClient
 from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy_utils import create_database, database_exists, drop_database
 
@@ -30,16 +34,30 @@ def is_env_true(var_name: str) -> bool:
 def tmp_sqlite_url():
     tmp_path = os.path.abspath(f"{cwd}/../tmp")
     os.makedirs(tmp_path, exist_ok=True)
-    return f"sqlite:///{tmp_path}/test.db"
+    return f"sqlite+aiosqlite:///{tmp_path}/test.db"
 
 
-def prep_new_test_db(db_url: str) -> tuple[bool, str]:
+def async2sync_database_uri(database_uri: str) -> str:
+    """
+    translate a async SQLALCHEMY_DATABASE_URI format string
+    to a sync format, which can be used by alembic
+    """
+    if database_uri.startswith("sqlite+aiosqlite:"):
+        return database_uri.replace("+aiosqlite", "")
+    elif database_uri.startswith("postgresql+asyncpg:"):
+        return database_uri.replace("+asyncpg", "+psycopg")
+    else:
+        return database_uri
+
+
+def prep_new_test_db(test_db_url: str) -> tuple[bool, str]:
     """
     create a new test database
     run alembic schema migration
     then seed the database with some test data
     return: True if new database created
     """
+    db_url = async2sync_database_uri(test_db_url)
     if database_exists(db_url):
         return False, ""
 
@@ -61,20 +79,21 @@ def prep_new_test_db(db_url: str) -> tuple[bool, str]:
     return True, db_url
 
 
-test_db_url, conn_args = os.environ.get("TEST_DATABASE_URI", tmp_sqlite_url()), {}
-if test_db_url.startswith("sqlite"):
-    conn_args = {"check_same_thread": False}
-testing_sql_engine = create_engine(test_db_url, connect_args=conn_args, echo=False)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=testing_sql_engine)
+# test database setup for app
+# modelled after database.py in the app
+test_db_url = os.environ.get("TEST_DATABASE_URI", tmp_sqlite_url())
+
+async_testing_sql_engine = create_async_engine(test_db_url, echo=False)
+AsyncTestingSessionLocal = async_sessionmaker(
+    expire_on_commit=False,
+    class_=AsyncSession,
+    bind=async_testing_sql_engine,
+)
 
 
-# Testing Dependency
-def testing_db_session():
-    session = TestingSessionLocal()
-    try:
+async def testing_db_session() -> AsyncIterator[AsyncSession]:
+    async with AsyncTestingSessionLocal() as session:
         yield session
-    finally:
-        session.close()
 
 
 # overrides default dependency injection for testing
@@ -102,12 +121,28 @@ def test_db():
         drop_database(sync_db_url)
 
 
+# in pytest-asyncio the default event loop is function scoped
+# which causes problem with asyncpg
 @pytest.fixture(scope="session")
-def session():
-    with TestingSessionLocal() as session:
+def event_loop():
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest.fixture()
+async def session():
+    async with AsyncTestingSessionLocal() as session:
         yield session
 
 
+@pytest.fixture(scope="session")
+async def client():
+    async with AsyncClient(app=app, base_url="http://localhost:8000") as client:
+        yield client
+
+
+# seed database for new test database
 def seed_data(session: Session):
     some_dt = datetime(2021, 1, 2, 12, 0, 1, tzinfo=timezone.utc)
 

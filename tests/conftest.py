@@ -22,10 +22,43 @@ from main import app  # noqa
 logger = logging.getLogger(__name__)
 
 
+# helper functions
+def is_env_true(var_name: str) -> bool:
+    return os.environ.get(var_name, "N").upper() in ["1", "Y", "YES", "TRUE"]
+
+
 def tmp_sqlite_url():
     tmp_path = os.path.abspath(f"{cwd}/../tmp")
     os.makedirs(tmp_path, exist_ok=True)
     return f"sqlite:///{tmp_path}/test.db"
+
+
+def prep_new_test_db(db_url: str) -> tuple[bool, str]:
+    """
+    create a new test database
+    run alembic schema migration
+    then seed the database with some test data
+    return: True if new database created
+    """
+    if database_exists(db_url):
+        return False, ""
+
+    logger.info(f"creating test database {db_url}")
+    create_database(db_url)
+
+    # Run the migrations
+    # so we set it so that alembic knows to use the correct database during testing
+    os.environ["SQLALCHEMY_DATABASE_URI"] = db_url
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
+
+    # seed test data
+    engine = create_engine(db_url)
+    with sessionmaker(autocommit=False, autoflush=False, bind=engine)() as session:
+        logger.info("adding seed data")
+        seed_data(session)
+
+    return True, db_url
 
 
 test_db_url, conn_args = os.environ.get("TEST_DATABASE_URI", tmp_sqlite_url()), {}
@@ -48,6 +81,7 @@ def testing_db_session():
 app.dependency_overrides[db_session] = testing_db_session
 
 
+# text fixtures
 @pytest.fixture(autouse=True, scope="session")
 def test_db():
     """
@@ -56,34 +90,16 @@ def test_db():
     2. run migration on the database
     3. delete the database after the test, unless KEEP_TEST_DB is set to Y
     """
-    test_db_created = False
-
-    if not database_exists(test_db_url):
-        print(f"==creating test database {test_db_url}")
-        logger.info(f"==creating test database {test_db_url}")
-        create_database(test_db_url)
-        test_db_created = True
-
-        # Run the migrations
-        # so we set it so that alembic knows to use the correct database during testing
-        os.environ["SQLALCHEMY_DATABASE_URI"] = test_db_url
-        alembic_cfg = Config("alembic.ini")
-        command.upgrade(alembic_cfg, "head")
-
-        # seed test data
-        with TestingSessionLocal() as session:
-            logger.info("==adding seed data")
-            seed_data(session)
+    test_db_created, sync_db_url = prep_new_test_db(test_db_url)
 
     # the yielded value is not used, but we need this structure to ensure the cleanup code runs
-    yield testing_sql_engine
+    yield
 
     # only delete the test database if it was created during this test run
     # to avoid accidental deletion of potentially important data
-    keep_test_db = os.environ.get("KEEP_TEST_DB", "N").upper() in ["1", "Y", "YES", "TRUE"]
-    if test_db_created and not keep_test_db:
-        logger.info(f"==dropping test database {test_db_url}")
-        drop_database(test_db_url)
+    if test_db_created and not is_env_true("KEEP_TEST_DB"):
+        logger.info(f"dropping test database {sync_db_url}")
+        drop_database(sync_db_url)
 
 
 @pytest.fixture(scope="session")

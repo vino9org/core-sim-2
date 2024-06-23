@@ -4,7 +4,7 @@ from typing import Any, Type, TypeVar
 
 import ulid
 from pydantic import BaseModel
-from sqlalchemy import and_
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -22,16 +22,12 @@ def model2schema(model_obj: Any, schema_cls: Type[T]) -> T:
 
 
 def get_account_details(session: Session, account_num: str) -> schemas.AccountSchema | None:
-    account = (
-        session.query(models.Account)
-        .filter(
-            and_(
-                models.Account.account_num == account_num,
-                models.Account.status == models.StatusEnum.ACTIVE,
-            )
-        )
-        .first()
+    stmt = select(models.Account).filter(
+        models.Account.account_num == account_num,
+        models.Account.status == models.StatusEnum.ACTIVE,
     )
+    result = session.execute(stmt)
+    account = result.scalars().first()
 
     if account:
         return model2schema(account, schemas.AccountSchema)
@@ -44,15 +40,16 @@ def _lock_accounts_for_trasnfer_(
     debit_account_num: str,
     credit_account_num: str,
 ) -> tuple[models.Account, models.Account]:
-    accounts = (
-        session.query(models.Account)
+    stmt = (
+        select(models.Account)
         .filter(
             models.Account.account_num.in_([debit_account_num, credit_account_num]),
             models.Account.status == models.StatusEnum.ACTIVE,
         )
         .with_for_update()
-        .all()
     )
+    result = session.execute(stmt)
+    accounts = result.scalars().all()
 
     if len(accounts) != 2:
         session.rollback()

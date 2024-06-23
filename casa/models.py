@@ -25,9 +25,9 @@ class Base(DeclarativeBase):
 
 
 class StatusEnum(enum.Enum):
-    ACTIVE = "active"
-    SUSPENDED = "suspended"
-    CLOSED = "closed"
+    ACTIVE = "ACTIVE"
+    SUSPENDED = "SUSPENDED"
+    CLOSED = "CLOSED"
 
 
 class Account(Base):

@@ -14,9 +14,6 @@ with open("logger_config.json", "r") as f:
     LOGGING_CONFIG = json.load(f)
     logging.config.dictConfig(LOGGING_CONFIG)
 
-app = FastAPI(docs_url=None, redoc_url=None)
-app.include_router(casa_router)
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -26,6 +23,10 @@ async def lifespan(app: FastAPI):
     console_formatter = uvicorn.logging.ColourizedFormatter(LOGGING_CONFIG["formatters"]["standard"]["format"])
     logger.handlers[0].setFormatter(console_formatter)
     yield
+
+
+app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None)
+app.include_router(casa_router)
 
 
 if __name__ == "__main__":

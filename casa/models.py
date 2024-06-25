@@ -43,7 +43,7 @@ class Account(Base):
     balance: Mapped[Decimal] = mapped_column(DECIMAL(14, 2))
     avail_balance: Mapped[Decimal] = mapped_column(DECIMAL(14, 2))
     status: Mapped[StatusEnum] = mapped_column(Enum(StatusEnum), default=StatusEnum.ACTIVE)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now)
 
     transactions: Mapped[List["Transaction"]] = relationship("Transaction", back_populates="account")
 

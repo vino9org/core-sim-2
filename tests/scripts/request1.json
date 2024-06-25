@@ -1,0 +1,8 @@
+{
+    "trx_date": "2024-06-24",
+    "debit_account_num": "A834666497",
+    "credit_account_num": "A786432010",
+    "currency": "USD",
+    "amount": 15.00,
+    "memo": "test transfer from curl"
+}

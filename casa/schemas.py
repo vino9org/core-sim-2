@@ -1,11 +1,13 @@
 from datetime import datetime
-from typing import Annotated, Optional, TypeAlias
+from typing import Annotated, Optional, TypeAlias, TypeVar
 
 from annotated_types import Gt
 from pydantic import BaseModel, constr
 
 positive: TypeAlias = Annotated[float, Gt(0)]
 curreny: TypeAlias = Annotated[str, constr(min_length=3, max_length=3)]
+
+BaseModelT = TypeVar("BaseModelT", bound=BaseModel)
 
 
 class AccountSchema(BaseModel):
@@ -21,7 +23,8 @@ class AccountSchema(BaseModel):
 
 
 class TransferSchema(BaseModel):
-    ref_id: Optional[str] = None
+    trx_id: Optional[str] = None
+    ref_id: str
     trx_date: str
     debit_account_num: str
     credit_account_num: str

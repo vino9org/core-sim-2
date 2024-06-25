@@ -1,8 +1,8 @@
 """initial schema
 
-Revision ID: cf6d42a9a9a3
+Revision ID: 3deea3897ca4
 Revises:
-Create Date: 2024-06-25 12:41:09.153786
+Create Date: 2024-06-25 17:05:43.450410
 
 """
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "cf6d42a9a9a3"
+revision: str = "3deea3897ca4"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -34,8 +34,9 @@ def upgrade() -> None:
     op.create_table(
         "casa_transfer",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
-        sa.Column("ref_id", sa.String(length=32), nullable=False),
+        sa.Column("trx_id", sa.String(length=32), nullable=False),
         sa.Column("trx_date", sa.String(length=10), nullable=False),
+        sa.Column("ref_id", sa.String(length=32), nullable=False),
         sa.Column("currency", sa.String(length=3), nullable=False),
         sa.Column("amount", sa.DECIMAL(precision=14, scale=2), nullable=False),
         sa.Column("memo", sa.String(length=100), nullable=False),
@@ -43,7 +44,7 @@ def upgrade() -> None:
         sa.Column("credit_account_num", sa.String(length=32), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("ref_id"),
+        sa.UniqueConstraint("trx_id"),
     )
     op.create_table(
         "casa_transaction",
@@ -53,6 +54,7 @@ def upgrade() -> None:
         sa.Column("amount", sa.DECIMAL(precision=14, scale=2), nullable=False),
         sa.Column("running_balance", sa.DECIMAL(precision=14, scale=2), nullable=False),
         sa.Column("ref_id", sa.String(length=32), nullable=False),
+        sa.Column("trx_id", sa.String(length=32), nullable=False),
         sa.Column("memo", sa.String(length=100), nullable=False),
         sa.Column("is_published", sa.Boolean(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),

@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import AsyncIterator
 
 import pytest
@@ -145,7 +145,9 @@ async def client():
 
 # seed database for new test database
 def seed_data(session: Session):
-    some_dt = datetime(2021, 1, 2, 12, 0, 1, tzinfo=timezone.utc)
+    today = datetime.now().strftime("%Y-%m-%d")
+    trx_id = str(ulid.new())
+    ref_id = "CustomerSupplied"
 
     # create accounts
     account1 = models.Account(
@@ -153,7 +155,6 @@ def seed_data(session: Session):
         currency="USD",
         balance=1000.00,
         avail_balance=1000.00,
-        updated_at=some_dt,
     )
 
     account2 = models.Account(
@@ -161,7 +162,6 @@ def seed_data(session: Session):
         currency="USD",
         balance=500.00,
         avail_balance=500.00,
-        updated_at=some_dt,
     )
 
     session.add_all([account1, account2])
@@ -169,26 +169,37 @@ def seed_data(session: Session):
 
     # create transactions
     transaction1 = models.Transaction(
-        ref_id=str(ulid.new()),
-        trx_date="2021-01-01",
+        trx_id=trx_id,
+        ref_id=ref_id,
+        trx_date=today,
         currency="USD",
         amount=100.00,
-        memo="Initial deposit",
+        memo="gift",
         account=account1,
-        created_at=some_dt,
         running_balance=1000.00,
     )
 
     transaction2 = models.Transaction(
-        ref_id=str(ulid.new()),
-        trx_date="2021-01-01",
+        trx_id=trx_id,
+        ref_id=ref_id,
+        trx_date=today,
         currency="USD",
-        amount=50.00,
-        memo="Initial deposit",
+        amount=100.00,
+        memo=f"From {account1.account_num}: gift",
         account=account2,
-        created_at=some_dt,
         running_balance=500.00,
     )
 
-    session.add_all([transaction1, transaction2])
+    transfer = models.Transfer(
+        trx_id=trx_id,
+        ref_id=ref_id,
+        trx_date=today,
+        currency="USD",
+        amount=100.00,
+        memo="gift",
+        debit_account_num=account1.account_num,
+        credit_account_num=account2.account_num,
+    )
+
+    session.add_all([transaction1, transaction2, transfer])
     session.commit()

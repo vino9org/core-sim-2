@@ -59,6 +59,7 @@ class Transaction(Base):
     amount: Mapped[Decimal] = mapped_column(DECIMAL(14, 2))
     running_balance: Mapped[Decimal] = mapped_column(DECIMAL(14, 2))
     ref_id: Mapped[str] = mapped_column(String(32))
+    trx_id: Mapped[str] = mapped_column(String(32))
     memo: Mapped[str] = mapped_column(String(100))
     is_published: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
@@ -73,8 +74,9 @@ class Transfer(Base):
     __tablename__ = "casa_transfer"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    ref_id: Mapped[str] = mapped_column(String(32), unique=True)
+    trx_id: Mapped[str] = mapped_column(String(32), unique=True)
     trx_date: Mapped[str] = mapped_column(String(10), index=True)
+    ref_id: Mapped[str] = mapped_column(String(32))
     currency: Mapped[str] = mapped_column(String(3))
     amount: Mapped[Decimal] = mapped_column(DECIMAL(14, 2))
     memo: Mapped[str] = mapped_column(String(100))

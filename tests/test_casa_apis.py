@@ -1,3 +1,6 @@
+from datetime import datetime
+from uuid import uuid4
+
 from casa import models
 
 
@@ -14,7 +17,8 @@ async def test_get_account_not_found(client):
 
 async def test_transfer_success(client, mocker):
     payload = {
-        "trx_date": "2021-01-02",
+        "ref_id": uuid4().hex,
+        "trx_date": datetime.now().strftime("%Y-%m-%d"),
         "debit_account_num": "0987654321",
         "credit_account_num": "1234567890",
         "currency": "USD",

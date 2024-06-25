@@ -1,10 +1,9 @@
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Type, TypeVar
+from typing import Any, Type
 
 import ulid
-from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,7 +12,6 @@ from . import models, schemas
 
 __ALL__ = ["ValidationError", "get_account_details", "transfer"]
 
-T = TypeVar("T", bound=BaseModel)
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +20,7 @@ class ValidationError(Exception):
     pass
 
 
-def model2schema(model_obj: Any, schema_cls: Type[T]) -> T:
+def model2schema(model_obj: Any, schema_cls: Type[schemas.BaseModelT]) -> schemas.BaseModelT:
     return schema_cls.model_validate(model_obj)
 
 
@@ -78,8 +76,7 @@ async def transfer(
         now_dt = datetime.now()
         transfer_amount = Decimal(transfer.amount)
 
-        if transfer.ref_id is None or transfer.ref_id == "":
-            transfer.ref_id = str(ulid.new())
+        trx_id = str(ulid.new())
 
         debit_account, credit_account = await _lock_accounts_for_trasnfer_(
             session,
@@ -102,6 +99,7 @@ async def transfer(
             account=debit_account,
             created_at=now_dt,
             running_balance=debit_account_balance,
+            trx_id=trx_id,
         )
 
         credit_account_balance = credit_account.balance + transfer_amount
@@ -117,9 +115,11 @@ async def transfer(
             account=credit_account,
             created_at=now_dt,
             running_balance=credit_account_balance,
+            trx_id=trx_id,
         )
 
         transfer_obj = models.Transfer(
+            trx_id=trx_id,
             ref_id=transfer.ref_id,
             trx_date=transfer.trx_date,
             currency=transfer.currency,

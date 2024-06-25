@@ -1,3 +1,4 @@
+import logging
 from typing import AsyncIterator
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -6,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import SessionLocal
 
 from . import schemas, service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/casa")
 
@@ -17,7 +20,10 @@ async def db_session() -> AsyncIterator[AsyncSession]:
 
 
 @router.get("/accounts/{account_num}", response_model=schemas.AccountSchema)
-async def get_account_details(account_num: str, db_session: AsyncSession = Depends(db_session)):
+async def get_account_details(
+    account_num: str,
+    db_session: AsyncSession = Depends(db_session),
+):
     account = await service.get_account_details(db_session, account_num)
     if account:
         return account
@@ -27,7 +33,9 @@ async def get_account_details(account_num: str, db_session: AsyncSession = Depen
 
 @router.post("/transfers", response_model=schemas.TransferSchema, status_code=201)
 async def transfer(
-    transfer_req: schemas.TransferSchema, background_tasks: BackgroundTasks, session: AsyncSession = Depends(db_session)
+    transfer_req: schemas.TransferSchema,
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = Depends(db_session),
 ):
     try:
         tranfer, transactions = await service.transfer(session, transfer_req)
@@ -36,4 +44,5 @@ async def transfer(
     except service.ValidationError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
+        logger.info(f"An error occured: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

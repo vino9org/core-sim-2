@@ -149,5 +149,5 @@ async def transfer(
 def publish_events(events: list[tuple[Type[models.BaseT], int]]) -> int:
     for e in events:
         msg = f"publishing event for {e[0].__name__}({e[1]})"
-        logger.info(msg)
+        logger.debug(msg)
     return 0

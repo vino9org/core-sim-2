@@ -84,7 +84,7 @@ def prep_new_test_db(test_db_url: str) -> tuple[bool, str]:
 # modelled after database.py in the app
 test_db_url = os.environ.get("TEST_DATABASE_URL", tmp_sqlite_url())
 
-async_testing_sql_engine = create_async_engine(test_db_url, echo=True)
+async_testing_sql_engine = create_async_engine(test_db_url, echo=False)
 AsyncTestingSessionLocal = async_sessionmaker(
     expire_on_commit=False,
     class_=AsyncSession,

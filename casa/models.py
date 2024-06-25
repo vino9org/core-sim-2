@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 from decimal import Decimal
-from typing import List
+from typing import List, TypeVar
 
 from sqlalchemy import (
     DECIMAL,
@@ -23,6 +23,9 @@ from sqlalchemy.orm import (
 
 class Base(DeclarativeBase):
     pass
+
+
+BaseT = TypeVar("BaseT", bound=Base)
 
 
 class StatusEnum(enum.Enum):

@@ -1,6 +1,6 @@
 from typing import AsyncIterator
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import SessionLocal
@@ -26,9 +26,13 @@ async def get_account_details(account_num: str, db_session: AsyncSession = Depen
 
 
 @router.post("/transfers", response_model=schemas.TransferSchema, status_code=201)
-async def transfer(transfer_req: schemas.TransferSchema, session: AsyncSession = Depends(db_session)):
+async def transfer(
+    transfer_req: schemas.TransferSchema, background_tasks: BackgroundTasks, session: AsyncSession = Depends(db_session)
+):
     try:
-        return await service.transfer(session, transfer_req)
+        tranfer, transactions = await service.transfer(session, transfer_req)
+        background_tasks.add_task(service.publish_events, transactions)
+        return tranfer
     except service.ValidationError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:

@@ -1,3 +1,6 @@
+from casa import models
+
+
 async def test_get_account_details(client):
     response = await client.get("/api/casa/accounts/1234567890")
     assert response.status_code == 200
@@ -9,7 +12,7 @@ async def test_get_account_not_found(client):
     assert response.status_code == 404
 
 
-async def test_transfer_success(client):
+async def test_transfer_success(client, mocker):
     payload = {
         "trx_date": "2021-01-02",
         "debit_account_num": "0987654321",
@@ -19,9 +22,16 @@ async def test_transfer_success(client):
         "memo": "test transfer",
     }
 
+    mock = mocker.patch("casa.api.service.publish_events")
+
     response = await client.post("/api/casa/transfers", json=payload)
     assert response.status_code == 201
     assert response.json()["ref_id"] != ""
+
+    mock.assert_called_once()
+    args, _ = mock.call_args
+    assert len(args[0]) == 2
+    assert issubclass(models.Transaction, args[0][0][0])
 
 
 async def test_transfer_with_bad_account(client):

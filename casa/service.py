@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, Type, TypeVar
@@ -13,6 +14,8 @@ from . import models, schemas
 __ALL__ = ["ValidationError", "get_account_details", "transfer"]
 
 T = TypeVar("T", bound=BaseModel)
+
+logger = logging.getLogger(__name__)
 
 
 class ValidationError(Exception):
@@ -63,7 +66,14 @@ async def _lock_accounts_for_trasnfer_(
         return accounts[1], accounts[0]
 
 
-async def transfer(session: AsyncSession, transfer: schemas.TransferSchema) -> schemas.TransferSchema:
+async def transfer(
+    session: AsyncSession, transfer: schemas.TransferSchema
+) -> tuple[schemas.TransferSchema, list[tuple[Type[models.Transaction], int]]]:
+    """
+    perform a transfer and returns:
+    1. transfer object
+    2. list of Transfer objects and their id (to be used to event publishing later)
+    """
     try:
         now_dt = datetime.now()
         transfer_amount = Decimal(transfer.amount)
@@ -123,8 +133,21 @@ async def transfer(session: AsyncSession, transfer: schemas.TransferSchema) -> s
         session.add_all([debit_account, credit_account, debit_transction, credit_transction, transfer_obj])
         await session.commit()
 
-        return model2schema(transfer_obj, schemas.TransferSchema)
+        events = [
+            (models.Transaction, debit_transction.id),
+            (models.Transaction, credit_transction.id),
+        ]
+        schema = model2schema(transfer_obj, schemas.TransferSchema)
+
+        return schema, events
 
     except (IntegrityError, ValidationError):
         await session.rollback()
         raise
+
+
+def publish_events(events: list[tuple[Type[models.BaseT], int]]) -> int:
+    for e in events:
+        msg = f"publishing event for {e[0].__name__}({e[1]})"
+        logger.info(msg)
+    return 0

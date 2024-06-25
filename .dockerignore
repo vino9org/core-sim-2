@@ -8,3 +8,4 @@
 !requirements*.lock
 !*.py
 !casa/*
+!logger_config.json

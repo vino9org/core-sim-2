@@ -40,9 +40,11 @@ async def transfer(
     try:
         tranfer, transactions = await service.transfer(session, transfer_req)
         background_tasks.add_task(service.publish_events, transactions)
+        logger.info(f"processed request: {transfer.ref_id}")
         return tranfer
     except service.ValidationError as e:
+        logger.info(f"request failed validation: {transfer_req.ref_id}")
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
-        logger.info(f"An error occured: {str(e)}")
+        logger.warn(f"An error occured: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

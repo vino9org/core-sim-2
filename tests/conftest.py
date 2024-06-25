@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import AsyncIterator
 
 import pytest
+import ulid
 from alembic import command
 from alembic.config import Config
 from httpx import AsyncClient
@@ -83,7 +84,7 @@ def prep_new_test_db(test_db_url: str) -> tuple[bool, str]:
 # modelled after database.py in the app
 test_db_url = os.environ.get("TEST_DATABASE_URL", tmp_sqlite_url())
 
-async_testing_sql_engine = create_async_engine(test_db_url, echo=False)
+async_testing_sql_engine = create_async_engine(test_db_url, echo=True)
 AsyncTestingSessionLocal = async_sessionmaker(
     expire_on_commit=False,
     class_=AsyncSession,
@@ -168,23 +169,25 @@ def seed_data(session: Session):
 
     # create transactions
     transaction1 = models.Transaction(
-        ref_id="T1234567890",
+        ref_id=str(ulid.new()),
         trx_date="2021-01-01",
         currency="USD",
         amount=100.00,
         memo="Initial deposit",
         account=account1,
         created_at=some_dt,
+        running_balance=1000.00,
     )
 
     transaction2 = models.Transaction(
-        ref_id="T0987654321",
+        ref_id=str(ulid.new()),
         trx_date="2021-01-01",
         currency="USD",
         amount=50.00,
         memo="Initial deposit",
         account=account2,
         created_at=some_dt,
+        running_balance=500.00,
     )
 
     session.add_all([transaction1, transaction2])

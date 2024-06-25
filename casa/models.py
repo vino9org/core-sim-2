@@ -5,6 +5,7 @@ from typing import List
 
 from sqlalchemy import (
     DECIMAL,
+    Boolean,
     DateTime,
     Enum,
     ForeignKey,
@@ -39,28 +40,30 @@ class Account(Base):
     balance: Mapped[Decimal] = mapped_column(DECIMAL(14, 2))
     avail_balance: Mapped[Decimal] = mapped_column(DECIMAL(14, 2))
     status: Mapped[StatusEnum] = mapped_column(Enum(StatusEnum), default=StatusEnum.ACTIVE)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
     transactions: Mapped[List["Transaction"]] = relationship("Transaction", back_populates="account")
 
-    __table_args__ = (Index("account_currency_idx", "account_num", "currency", unique=True),)
+    __table_args__ = (Index("account_status_idx", "account_num", "status", unique=True),)
 
 
 class Transaction(Base):
     __tablename__ = "casa_transaction"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    ref_id: Mapped[str] = mapped_column(String(32), index=True)
-    trx_date: Mapped[str] = mapped_column(String(10))
+    trx_date: Mapped[str] = mapped_column(String(10), index=True)
     currency: Mapped[str] = mapped_column(String(3))
     amount: Mapped[Decimal] = mapped_column(DECIMAL(14, 2))
+    running_balance: Mapped[Decimal] = mapped_column(DECIMAL(14, 2))
+    ref_id: Mapped[str] = mapped_column(String(32))
     memo: Mapped[str] = mapped_column(String(100))
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
     account_id: Mapped[int] = mapped_column(Integer, ForeignKey("casa_account.id"))
     account: Mapped[Account] = relationship("Account", back_populates="transactions")
 
-    __table_args__ = (Index("account_trx_date_idx", "account_id", "trx_date"),)
+    __table_args__ = (Index("account_date_idx", "account_id", "trx_date"),)
 
 
 class Transfer(Base):
@@ -74,4 +77,4 @@ class Transfer(Base):
     memo: Mapped[str] = mapped_column(String(100))
     debit_account_num: Mapped[str] = mapped_column(String(32))
     credit_account_num: Mapped[str] = mapped_column(String(32))
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

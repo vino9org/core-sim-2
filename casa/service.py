@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import models, schemas
 
+__ALL__ = ["ValidationError", "get_account_details", "transfer"]
+
 T = TypeVar("T", bound=BaseModel)
 
 
@@ -77,8 +79,9 @@ async def transfer(session: AsyncSession, transfer: schemas.TransferSchema) -> s
         if debit_account.avail_balance < transfer.amount:
             raise ValidationError("Insufficient funds in debit account")
 
-        debit_account.avail_balance -= Decimal(transfer.amount)
-        debit_account.balance -= transfer_amount
+        debit_account_balance = debit_account.balance - transfer_amount
+        debit_account.avail_balance = debit_account_balance
+        debit_account.balance = debit_account_balance
 
         debit_transction = models.Transaction(
             ref_id=transfer.ref_id,
@@ -88,10 +91,12 @@ async def transfer(session: AsyncSession, transfer: schemas.TransferSchema) -> s
             memo=transfer.memo,
             account=debit_account,
             created_at=now_dt,
+            running_balance=debit_account_balance,
         )
 
-        credit_account.avail_balance += transfer_amount
-        credit_account.balance += transfer_amount
+        credit_account_balance = credit_account.balance + transfer_amount
+        credit_account.avail_balance = credit_account_balance
+        credit_account.balance = credit_account_balance
 
         credit_transction = models.Transaction(
             ref_id=transfer.ref_id,
@@ -101,6 +106,7 @@ async def transfer(session: AsyncSession, transfer: schemas.TransferSchema) -> s
             memo=f"from {transfer.debit_account_num}: {transfer.memo}",
             account=credit_account,
             created_at=now_dt,
+            running_balance=credit_account_balance,
         )
 
         transfer_obj = models.Transfer(
@@ -117,11 +123,7 @@ async def transfer(session: AsyncSession, transfer: schemas.TransferSchema) -> s
         session.add_all([debit_account, credit_account, debit_transction, credit_transction, transfer_obj])
         await session.commit()
 
-        transfer.created_at = now_dt
-        return transfer
-
-        # this actually triggers a query in the database, why?!
-        # return model2schema(transfer_obj, schemas.TransferSchema)
+        return model2schema(transfer_obj, schemas.TransferSchema)
 
     except (IntegrityError, ValidationError):
         await session.rollback()

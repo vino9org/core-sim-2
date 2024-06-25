@@ -21,7 +21,7 @@ target_metadata = Base.metadata
 
 
 def include_object(object_, name, type_, reflected, compare_to):
-    # Replace 'table_to_ignore' with the actual name of the table you want to ignore
+    return True
     return type_ == "table" and name.startswith("casa_")
 
 

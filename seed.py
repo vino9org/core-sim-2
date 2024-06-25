@@ -128,9 +128,9 @@ def _gen_random_account_num_(count: int, digits: int) -> list[int]:
 
 
 def get_sessionmaker():
-    db_url = os.environ.get("ALEMBIC_DATABASE_URI")
+    db_url = os.environ.get("ALEMBIC_DATABASE_URL")
     if not db_url:
-        db_url = os.environ.get("SQLALCHEMY_DATABASE_URI")
+        db_url = os.environ.get("DATABASE_URL")
 
     if not db_url:
         sys.exit("Database URL not found in environment variables")

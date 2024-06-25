@@ -39,7 +39,7 @@ def tmp_sqlite_url():
 
 def async2sync_database_uri(database_uri: str) -> str:
     """
-    translate a async SQLALCHEMY_DATABASE_URI format string
+    translate a async DATABASE_URL format string
     to a sync format, which can be used by alembic
     """
     if database_uri.startswith("sqlite+aiosqlite:"):
@@ -66,7 +66,7 @@ def prep_new_test_db(test_db_url: str) -> tuple[bool, str]:
 
     # Run the migrations
     # so we set it so that alembic knows to use the correct database during testing
-    os.environ["ALEMBIC_DATABASE_URI"] = db_url
+    os.environ["ALEMBIC_DATABASE_URL"] = db_url
     alembic_cfg = Config("alembic.ini")
     command.upgrade(alembic_cfg, "head")
 
@@ -81,7 +81,7 @@ def prep_new_test_db(test_db_url: str) -> tuple[bool, str]:
 
 # test database setup for app
 # modelled after database.py in the app
-test_db_url = os.environ.get("TEST_DATABASE_URI", tmp_sqlite_url())
+test_db_url = os.environ.get("TEST_DATABASE_URL", tmp_sqlite_url())
 
 async_testing_sql_engine = create_async_engine(test_db_url, echo=False)
 AsyncTestingSessionLocal = async_sessionmaker(
